@@ -1,0 +1,558 @@
+:root {
+  --bg: #f5f6f8;
+  --card-bg: #ffffff;
+  --border: #d8dce1;
+  --text: #1c2128;
+  --text-muted: #64707d;
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+  --error: #d1242f;
+  --error-bg: #fff1f0;
+  --warning-bg: #fff8e6;
+  --ok: #1a7f37;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c;
+    --card-bg: #1c2128;
+    --border: #333a45;
+    --text: #e6edf3;
+    --text-muted: #8b96a5;
+    --accent: #4d8dfd;
+    --accent-text: #0b1220;
+    --error: #ff7b72;
+    --error-bg: #3a1618;
+    --warning-bg: #332a10;
+    --ok: #56d364;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.page {
+  /* max-width: 980px; */
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+
+.page .header {
+  grid-area: header;
+  font-size: 1rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.builder {
+  display: grid;
+  grid-template-areas:
+    "header header header"
+    "left content right";
+  grid-template-columns: 1fr minmax(0, 980px) 1fr;
+  grid-area: content;
+}
+
+.builder .middle {
+  grid-area: content;
+}
+
+.page p.subtitle {
+  color: var(--text-muted);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  max-width: 65ch;
+  margin-inline: auto;
+}
+
+.settings-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-bar label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  gap: 0.25rem;
+}
+
+.settings-bar input {
+  width: 6rem;
+}
+
+.settings-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.library-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.library-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.library-count {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.library-body {
+  margin-top: 0.5rem;
+}
+
+.library-hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin: 0 0 0.6rem;
+  max-width: 70ch;
+}
+
+.library-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+.library-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 0.7fr 0.85fr 0.8fr 0.8fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.library-row input,
+.library-row select {
+  padding: 0.35rem 0.45rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.library-row input:disabled {
+  opacity: 0.4;
+}
+
+.library-row-header {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0 0.45rem;
+}
+
+.preset-select {
+  width: 7.5rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 5px;
+  border: 1px dashed var(--border);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.preset-select:disabled {
+  opacity: 0.4;
+}
+
+.location-select {
+  width: 5.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reaction-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  gap: 0.2rem;
+}
+
+.field-label input {
+  font-size: 0.95rem;
+}
+
+.card-header .field-label:nth-of-type(1) input {
+  width: 10rem;
+}
+.card-header .field-label:nth-of-type(2) input {
+  width: 5rem;
+}
+.card-header .field-label:nth-of-type(3) input {
+  width: 5rem;
+}
+
+.card-collapse-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  width: 1.8rem;
+  height: 1.8rem;
+  align-self: center;
+  cursor: pointer;
+  font-size: 1.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  align-items: center;
+}
+
+.card-collapse-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.btn-remove-card {
+  margin-left: auto;
+  align-self: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--error);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.card-warning {
+  background: var(--warning-bg);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.card-body h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 1rem 0 0.4rem;
+}
+
+.card-body h4:first-child {
+  margin-top: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+  position: relative;
+}
+
+.row + .row {
+  margin-top: 0.15rem;
+}
+
+.row.row-error {
+  background: var(--error-bg);
+}
+
+.row input,
+.row select {
+  padding: 0.35rem 0.45rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.field-name {
+  flex: 1 1 10rem;
+  min-width: 8rem;
+}
+
+.field-well {
+  width: 4.5rem;
+}
+
+.field-num {
+  width: 5.5rem;
+}
+
+.field-ratio-fixed {
+  width: 5.5rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.computed-volume {
+  min-width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+  font-size: 0.88rem;
+}
+
+.row-error .computed-volume {
+  color: var(--error);
+}
+
+.btn-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.4rem;
+}
+
+.btn-remove:hover {
+  color: var(--error);
+}
+
+.btn-remove-spacer {
+  width: 1.7rem;
+}
+
+.row-error-text {
+  flex-basis: 100%;
+  color: var(--error);
+  font-size: 0.78rem;
+  margin-top: -0.1rem;
+}
+
+.btn-add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-top: 0.35rem;
+}
+
+.override-fmol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.override-fmol .hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.card-footer {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.total-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.total-mismatch {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.card-errors {
+  color: var(--error);
+  font-size: 0.82rem;
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.toolbar {
+  position: fixed;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg);
+  padding: 1rem 0;
+  margin-top: 1rem;
+  grid-area: content;
+  height: fit-content;
+  z-index: 1;
+  width: 100%;
+}
+
+/* Wide viewports: float the toolbar in the left margin instead of pinning it
+   to the bottom of the page. Below this width there's no margin to put it in,
+   so it stays as the full-width sticky-bottom bar above. */
+@media (min-width: 1400px) {
+  .toolbar {
+    position: sticky;
+    align-self: start;
+    top: 1.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 0;
+    margin-inline: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    grid-area: left;
+    height: fit-content;
+    width: auto;
+  }
+
+  .btn-add-reaction,
+  .btn-collapse-all,
+  .btn-export {
+    width: 100%;
+    text-align: center;
+  }
+
+  .export-hint {
+    text-align: center;
+  }
+}
+
+.btn-add-reaction {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-collapse-all {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-collapse-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-export {
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.input-error {
+  border-color: var(--error) !important;
+  outline: 1px solid var(--error);
+}
+
+.headlink {
+  font-family: monospace;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 1.85rem;
+  margin-bottom: 0.3rem;
+  display: inline-block;
+}
+
+.headlink h2 {
+  margin: 0;
+}
+
+.headlink span:hover {
+  color: lavender;
+}

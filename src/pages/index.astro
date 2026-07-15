@@ -1,0 +1,31 @@
+---
+import ReactionBuilder from "../components/ReactionBuilder";
+import "../styles/global.css";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Golden Gate Reaction Builder</title>
+	</head>
+	<body>
+		<div class="page">
+			<div class="header">
+				<a class="headlink" href="/">
+					<h2 class="">
+						<span class="">gga.</span><span class="">trevfox</span>
+					</h2>
+				</a>
+				<p class="subtitle">
+					Build reaction mixes as cards, watch volumes compute live
+					from concentration/size/molar ratio, and export a CSV
+					formatted for <code>Golden_Gate_Assembly.py</code>.
+				</p>
+			</div>
+			<ReactionBuilder client:load />
+		</div>
+	</body>
+</html>

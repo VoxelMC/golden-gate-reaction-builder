@@ -1,0 +1,199 @@
+import { useEffect, useMemo, useState } from "react";
+import type { LibraryEntry, ReactionInput } from "../lib/types";
+import {
+	ALL_WELLS,
+	DEFAULT_MIN_PIPETTE_VOLUME_UL,
+	DEFAULT_TARGET_BACKBONE_FMOL,
+	computeReaction,
+	findDuplicates,
+	loadLibrary,
+	makeLibraryEntry,
+	makeReaction,
+	reactionHasErrors,
+	reactionsToCsv,
+	saveLibrary,
+} from "../lib/goldenGate";
+import ReactionCard from "./ReactionCard";
+import LibraryPanel from "./LibraryPanel";
+
+export default function ReactionBuilder() {
+	const [reactions, setReactions] = useState<ReactionInput[]>(() => [
+		makeReaction(new Set(), new Set()),
+	]);
+	const [defaultTargetBackboneFmol, setDefaultTargetBackboneFmol] = useState(DEFAULT_TARGET_BACKBONE_FMOL);
+	const [minPipetteVolumeUl, setMinPipetteVolumeUl] = useState(DEFAULT_MIN_PIPETTE_VOLUME_UL);
+	const [justExported, setJustExported] = useState(false);
+	const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+
+	// Library starts empty (matches SSR) and is filled in from localStorage right
+	// after mount — avoids a hydration mismatch between server and client renders.
+	const [library, setLibrary] = useState<LibraryEntry[]>([]);
+	useEffect(() => {
+		setLibrary(loadLibrary());
+	}, []);
+
+	function commitLibrary(next: LibraryEntry[]) {
+		setLibrary(next);
+		saveLibrary(next);
+	}
+
+	function addLibraryEntry() {
+		commitLibrary([...library, makeLibraryEntry()]);
+	}
+
+	function updateLibraryEntry(id: string, patch: Partial<LibraryEntry>) {
+		commitLibrary(library.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)));
+	}
+
+	function removeLibraryEntry(id: string) {
+		commitLibrary(library.filter((entry) => entry.id !== id));
+	}
+
+	const settings = { defaultTargetBackboneFmol, minPipetteVolumeUl };
+
+	const duplicateReactionIds = useMemo(
+		() => findDuplicates(reactions.map((r) => r.reactionId)),
+		[reactions],
+	);
+	const duplicateDestinationWells = useMemo(
+		() => findDuplicates(reactions.map((r) => r.destinationWell)),
+		[reactions],
+	);
+
+	const anyReactionHasErrors = reactions.some((r) => reactionHasErrors(computeReaction(r, settings)));
+	const hasDuplicates = duplicateReactionIds.size > 0 || duplicateDestinationWells.size > 0;
+	const canExport = reactions.length > 0 && !anyReactionHasErrors && !hasDuplicates;
+
+	function updateReaction(index: number, updated: ReactionInput) {
+		setReactions((prev) => prev.map((r, i) => (i === index ? updated : r)));
+	}
+
+	function removeReaction(index: number) {
+		const removedId = reactions[index]?.id;
+		setReactions((prev) => prev.filter((_, i) => i !== index));
+		if (removedId) {
+			setCollapsedIds((prev) => {
+				if (!prev.has(removedId)) return prev;
+				const next = new Set(prev);
+				next.delete(removedId);
+				return next;
+			});
+		}
+	}
+
+	function addReaction() {
+		const usedWells = new Set(reactions.map((r) => r.destinationWell));
+		const usedIds = new Set(reactions.map((r) => r.reactionId));
+		setReactions((prev) => [...prev, makeReaction(usedWells, usedIds)]);
+	}
+
+	function toggleCollapsed(id: string) {
+		setCollapsedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			return next;
+		});
+	}
+
+	const allCollapsed = reactions.length > 0 && reactions.every((r) => collapsedIds.has(r.id));
+
+	function toggleCollapseAll() {
+		setCollapsedIds(allCollapsed ? new Set() : new Set(reactions.map((r) => r.id)));
+	}
+
+	function exportCsv() {
+		const csv = reactionsToCsv(reactions);
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "golden_gate_reactions.csv";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		setJustExported(true);
+		setTimeout(() => setJustExported(false), 2500);
+	}
+
+	return (
+		<div className="builder">
+			<div className="middle">
+
+				<datalist id="well-options">
+					{ALL_WELLS.map((well) => (
+						<option key={well} value={well} />
+					))}
+				</datalist>
+
+				<div className="settings-bar">
+					<label>
+						Default target backbone (fmol)
+						<input
+							type="number"
+							min="0"
+							step="any"
+							value={defaultTargetBackboneFmol}
+							onChange={(e) => setDefaultTargetBackboneFmol(Number(e.target.value) || 0)}
+						/>
+					</label>
+					<label>
+						Minimum pipette volume (µL)
+						<input
+							type="number"
+							min="0"
+							step="any"
+							value={minPipetteVolumeUl}
+							onChange={(e) => setMinPipetteVolumeUl(Number(e.target.value) || 0)}
+						/>
+					</label>
+					<span className="settings-hint">
+						These mirror the robot protocol's runtime parameters and only affect the live preview below — set the
+						real values in the Opentrons App when you run the protocol.
+					</span>
+				</div>
+
+				<LibraryPanel
+					library={library}
+					onAdd={addLibraryEntry}
+					onUpdate={updateLibraryEntry}
+					onRemove={removeLibraryEntry}
+				/>
+
+				<div className="cards">
+					{reactions.map((reaction, i) => (
+						<ReactionCard
+							key={reaction.id}
+							reaction={reaction}
+							settings={settings}
+							library={library}
+							collapsed={collapsedIds.has(reaction.id)}
+							duplicateReactionId={duplicateReactionIds.has(reaction.reactionId.trim())}
+							duplicateDestinationWell={duplicateDestinationWells.has(reaction.destinationWell.trim())}
+							onChange={(updated) => updateReaction(i, updated)}
+							onRemove={() => removeReaction(i)}
+							onToggleCollapsed={() => toggleCollapsed(reaction.id)}
+						/>
+					))}
+				</div>
+			</div>
+
+			<div className="toolbar">
+				<button type="button" className="btn-add-reaction" onClick={addReaction}>
+					+ Add reaction
+				</button>
+				<button type="button" className="btn-collapse-all" onClick={toggleCollapseAll} disabled={reactions.length === 0}>
+					{allCollapsed ? "Expand all" : "Collapse all"}
+				</button>
+				<button type="button" className="btn-export" onClick={exportCsv} disabled={!canExport}>
+					{justExported ? "Downloaded!" : "Download CSV"}
+				</button>
+				{!canExport && <span className="export-hint">Fix the highlighted issues above to enable export.</span>}
+			</div>
+		</div>
+	);
+}
