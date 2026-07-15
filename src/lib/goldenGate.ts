@@ -18,13 +18,18 @@ import type {
 /** Kinds a backbone/insert fragment row's preset dropdown may pick from. */
 export const DNA_KINDS: LibraryKind[] = ["backbone", "insert"];
 /** Kinds a reagent row's preset dropdown may pick from. */
-export const REAGENT_KINDS: LibraryKind[] = ["enzyme", "ligase", "buffer", "other"];
+export const REAGENT_KINDS: LibraryKind[] = [
+  "enzyme",
+  "ligase",
+  "buffer",
+  "other",
+];
 /** Kinds the water row's preset dropdown may pick from. */
 export const WATER_KINDS: LibraryKind[] = ["water"];
 
 export const AVG_BP_MASS_DA = 650;
 export const MAX_REACTION_VOLUME_UL = 20;
-export const DEFAULT_TARGET_BACKBONE_FMOL = 20;
+export const DEFAULT_TARGET_BACKBONE_FMOL = 50;
 export const DEFAULT_MIN_PIPETTE_VOLUME_UL = 1;
 
 export const CSV_COLUMNS = [
@@ -66,7 +71,9 @@ export function nextId(prefix: string): string {
   return `${prefix}-${idCounter}-${Date.now().toString(36)}`;
 }
 
-export function makeFragment(defaults: Partial<FragmentInput> = {}): FragmentInput {
+export function makeFragment(
+  defaults: Partial<FragmentInput> = {},
+): FragmentInput {
   return {
     id: nextId("frag"),
     partName: "",
@@ -79,7 +86,9 @@ export function makeFragment(defaults: Partial<FragmentInput> = {}): FragmentInp
   };
 }
 
-export function makeReagent(defaults: Partial<ReagentInput> = {}): ReagentInput {
+export function makeReagent(
+  defaults: Partial<ReagentInput> = {},
+): ReagentInput {
   return {
     id: nextId("reagent"),
     role: "enzyme",
@@ -102,7 +111,9 @@ export function makeWater(defaults: Partial<WaterInput> = {}): WaterInput {
   };
 }
 
-export function makeLibraryEntry(defaults: Partial<LibraryEntry> = {}): LibraryEntry {
+export function makeLibraryEntry(
+  defaults: Partial<LibraryEntry> = {},
+): LibraryEntry {
   return {
     id: nextId("lib"),
     name: "",
@@ -147,7 +158,10 @@ export function saveLibrary(entries: LibraryEntry[]): void {
   }
 }
 
-export function makeReaction(usedWells: Set<string>, usedReactionIds: Set<string>): ReactionInput {
+export function makeReaction(
+  usedWells: Set<string>,
+  usedReactionIds: Set<string>,
+): ReactionInput {
   const destinationWell = ALL_WELLS.find((w) => !usedWells.has(w)) ?? "";
   let n = usedReactionIds.size + 1;
   let reactionId = `reaction_${n}`;
@@ -164,7 +178,11 @@ export function makeReaction(usedWells: Set<string>, usedReactionIds: Set<string
     targetBackboneFmol: String(DEFAULT_TARGET_BACKBONE_FMOL),
     backbone: makeFragment({ molarRatio: "1" }),
     inserts: [makeFragment()],
-    reagents: [makeReagent({ role: "enzyme" }), makeReagent({ role: "ligase" }), makeReagent({ role: "buffer" })],
+    reagents: [
+      makeReagent({ role: "enzyme" }),
+      makeReagent({ role: "ligase" }),
+      makeReagent({ role: "buffer" }),
+    ],
     water: makeWater(),
   };
 }
@@ -213,10 +231,20 @@ function computeFragmentVolume(
   };
 
   if (conc === null || sizeBp === null || molarRatio === null) {
-    return { ...base, role: "dna", volumeUl: null, error: "Missing conc/size/molar ratio" };
+    return {
+      ...base,
+      role: "dna",
+      volumeUl: null,
+      error: "Missing conc/size/molar ratio",
+    };
   }
   if (conc <= 0 || sizeBp <= 0 || molarRatio <= 0) {
-    return { ...base, role: "dna", volumeUl: null, error: "conc/size/molar ratio must be positive" };
+    return {
+      ...base,
+      role: "dna",
+      volumeUl: null,
+      error: "conc/size/molar ratio must be positive",
+    };
   }
 
   const fmolTarget = targetBackboneFmol * molarRatio;
@@ -242,7 +270,10 @@ function computeFragmentVolume(
   return { ...base, role: "dna", volumeUl: Math.round(rawVolumeUl * 10) / 10 };
 }
 
-function computeReagentVolume(reagent: ReagentInput, minPipetteVolumeUl: number): ComputedComponent {
+function computeReagentVolume(
+  reagent: ReagentInput,
+  minPipetteVolumeUl: number,
+): ComputedComponent {
   const base = {
     key: reagent.id,
     role: reagent.role,
@@ -258,15 +289,26 @@ function computeReagentVolume(reagent: ReagentInput, minPipetteVolumeUl: number)
     return { ...base, volumeUl: null, error: "Volume must be positive" };
   }
   if (volume < minPipetteVolumeUl) {
-    return { ...base, volumeUl: null, error: `${volume} µL is below the ${minPipetteVolumeUl} µL minimum` };
+    return {
+      ...base,
+      volumeUl: null,
+      error: `${volume} µL is below the ${minPipetteVolumeUl} µL minimum`,
+    };
   }
   if (volume > MAX_REACTION_VOLUME_UL) {
-    return { ...base, volumeUl: null, error: `Exceeds the ${MAX_REACTION_VOLUME_UL} µL p20 cap` };
+    return {
+      ...base,
+      volumeUl: null,
+      error: `Exceeds the ${MAX_REACTION_VOLUME_UL} µL p20 cap`,
+    };
   }
   return { ...base, volumeUl: Math.round(volume * 10) / 10 };
 }
 
-export function computeReaction(reaction: ReactionInput, settings: GlobalSettings): ComputedReaction {
+export function computeReaction(
+  reaction: ReactionInput,
+  settings: GlobalSettings,
+): ComputedReaction {
   const errors: string[] = [];
 
   if (!reaction.reactionId.trim()) errors.push("Reaction ID is required.");
@@ -278,23 +320,40 @@ export function computeReaction(reaction: ReactionInput, settings: GlobalSetting
   if (totalTargetUl === null || totalTargetUl <= 0) {
     errors.push("Total reaction volume must be a positive number.");
   } else if (totalTargetUl > MAX_REACTION_VOLUME_UL) {
-    errors.push(`Total reaction volume (${totalTargetUl} µL) exceeds the ${MAX_REACTION_VOLUME_UL} µL p20 cap.`);
+    errors.push(
+      `Total reaction volume (${totalTargetUl} µL) exceeds the ${MAX_REACTION_VOLUME_UL} µL p20 cap.`,
+    );
   }
 
   const targetBackboneFmol = reaction.overrideTargetFmol
-    ? (parsePositiveFloat(reaction.targetBackboneFmol) ?? settings.defaultTargetBackboneFmol)
+    ? (parsePositiveFloat(reaction.targetBackboneFmol) ??
+      settings.defaultTargetBackboneFmol)
     : settings.defaultTargetBackboneFmol;
 
   const components: ComputedComponent[] = [];
 
-  const backboneComputed = computeFragmentVolume(reaction.backbone, targetBackboneFmol, settings.minPipetteVolumeUl);
+  const backboneComputed = computeFragmentVolume(
+    reaction.backbone,
+    targetBackboneFmol,
+    settings.minPipetteVolumeUl,
+  );
   components.push({ ...backboneComputed, role: "backbone" });
-  if (!reaction.backbone.partName.trim() && !reaction.backbone.sourceWell.trim()) {
+  if (
+    !reaction.backbone.partName.trim() &&
+    !reaction.backbone.sourceWell.trim()
+  ) {
     // Not yet filled in at all — surfaced via the row's own missing-field error, no need to duplicate.
   }
 
   for (const insert of reaction.inserts) {
-    components.push({ ...computeFragmentVolume(insert, targetBackboneFmol, settings.minPipetteVolumeUl), role: "insert" });
+    components.push({
+      ...computeFragmentVolume(
+        insert,
+        targetBackboneFmol,
+        settings.minPipetteVolumeUl,
+      ),
+      role: "insert",
+    });
   }
 
   for (const reagent of reaction.reagents) {
@@ -309,26 +368,83 @@ export function computeReaction(reaction: ReactionInput, settings: GlobalSetting
   if (reaction.water.mode === "fixed") {
     const volume = parsePositiveFloat(reaction.water.fixedVolumeUl);
     if (volume === null) {
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: null, error: "Missing volume" };
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: null,
+        error: "Missing volume",
+      };
     } else if (volume <= 0) {
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: null, error: "Volume must be positive" };
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: null,
+        error: "Volume must be positive",
+      };
     } else if (volume < settings.minPipetteVolumeUl) {
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: null, error: `Below the ${settings.minPipetteVolumeUl} µL minimum` };
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: null,
+        error: `Below the ${settings.minPipetteVolumeUl} µL minimum`,
+      };
     } else {
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: Math.round(volume * 10) / 10 };
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: Math.round(volume * 10) / 10,
+      };
     }
   } else if (nonWaterHaveErrors || totalTargetUl === null) {
-    waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: null, error: "Waiting on other components" };
+    waterComponent = {
+      key: "water",
+      role: "water",
+      partName: reaction.water.partName || "water",
+      sourceWell: reaction.water.sourceWell,
+      sourceLocation: reaction.water.sourceLocation,
+      volumeUl: null,
+      error: "Waiting on other components",
+    };
   } else {
     const remainder = totalTargetUl - sumOfOthers;
     if (remainder < -0.001) {
       errors.push(
         `Components exceed the total reaction volume (${totalTargetUl} µL) by ${(-remainder).toFixed(2)} µL.`,
       );
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: null, error: "Reaction over budget" };
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: null,
+        error: "Reaction over budget",
+      };
     } else {
-      const finalWater = remainder < settings.minPipetteVolumeUl ? 0 : Math.round(remainder * 10) / 10;
-      waterComponent = { key: "water", role: "water", partName: reaction.water.partName || "water", sourceWell: reaction.water.sourceWell, sourceLocation: reaction.water.sourceLocation,volumeUl: finalWater };
+      const finalWater =
+        remainder < settings.minPipetteVolumeUl
+          ? 0
+          : Math.round(remainder * 10) / 10;
+      waterComponent = {
+        key: "water",
+        role: "water",
+        partName: reaction.water.partName || "water",
+        sourceWell: reaction.water.sourceWell,
+        sourceLocation: reaction.water.sourceLocation,
+        volumeUl: finalWater,
+      };
     }
   }
   components.push(waterComponent);
@@ -341,13 +457,19 @@ export function computeReaction(reaction: ReactionInput, settings: GlobalSetting
     }
   }
 
-  const totalComputedUl = components.reduce((sum, c) => sum + (c.volumeUl ?? 0), 0);
+  const totalComputedUl = components.reduce(
+    (sum, c) => sum + (c.volumeUl ?? 0),
+    0,
+  );
 
   return { totalTargetUl, totalComputedUl, components, errors };
 }
 
 export function reactionHasErrors(computed: ComputedReaction): boolean {
-  return computed.errors.length > 0 || computed.components.some((c) => c.volumeUl === null);
+  return (
+    computed.errors.length > 0 ||
+    computed.components.some((c) => c.volumeUl === null)
+  );
 }
 
 // ── CSV export ───────────────────────────────────────────────────────────────
@@ -385,7 +507,9 @@ function reactionToRows(reaction: ReactionInput): CsvRow[] {
     conc_ng_ul: reaction.backbone.concNgUl,
     size_bp: reaction.backbone.sizeBp,
     molar_ratio: "1",
-    target_backbone_fmol: reaction.overrideTargetFmol ? reaction.targetBackboneFmol : "",
+    target_backbone_fmol: reaction.overrideTargetFmol
+      ? reaction.targetBackboneFmol
+      : "",
     fixed_volume_ul: "",
   });
 
@@ -429,7 +553,8 @@ function reactionToRows(reaction: ReactionInput): CsvRow[] {
     size_bp: "",
     molar_ratio: "",
     target_backbone_fmol: "",
-    fixed_volume_ul: reaction.water.mode === "fixed" ? reaction.water.fixedVolumeUl : "",
+    fixed_volume_ul:
+      reaction.water.mode === "fixed" ? reaction.water.fixedVolumeUl : "",
   });
 
   return rows;
@@ -446,7 +571,11 @@ export function reactionsToCsv(reactions: ReactionInput[]): string {
   const lines = [CSV_COLUMNS.join(",")];
   for (const reaction of reactions) {
     for (const row of reactionToRows(reaction)) {
-      lines.push(CSV_COLUMNS.map((col) => escapeCsvField(String(row[col as keyof CsvRow] ?? ""))).join(","));
+      lines.push(
+        CSV_COLUMNS.map((col) =>
+          escapeCsvField(String(row[col as keyof CsvRow] ?? "")),
+        ).join(","),
+      );
     }
   }
   return lines.join("\n") + "\n";
