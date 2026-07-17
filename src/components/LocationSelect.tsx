@@ -6,7 +6,7 @@ interface Props {
 }
 
 const LABELS: Record<SourceLocation, string> = {
-  rack: "Rack",
+  rack: "Eppendorf",
   module: "Module",
 };
 

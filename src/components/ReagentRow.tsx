@@ -46,7 +46,7 @@ export default function ReagentRow({ reagent, computed, library, onChange, onRem
 				autoComplete="off"
 				className="field-well"
 				type="text"
-				list="well-options"
+				list={reagent.sourceLocation === "rack" ? "well-options-eppendorf" : "well-options"}
 				placeholder="Well"
 				value={reagent.sourceWell}
 				onChange={(e) => onChange({ sourceWell: e.target.value.toUpperCase() })}

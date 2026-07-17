@@ -65,6 +65,27 @@ export const ALL_WELLS: string[] = (() => {
   return wells;
 })();
 
+/** All 24 wells of the Eppendorf tube rack, column-major (A1, B1, C1, D1, A2, ...). */
+export const EPPENDORF_WELLS: string[] = (() => {
+  const rows = ["A", "B", "C", "D"];
+  const wells: string[] = [];
+  for (let col = 1; col <= 6; col++) {
+    for (const row of rows) {
+      wells.push(`${row}${col}`);
+    }
+  }
+  return wells;
+})();
+
+/** Which well list applies to a given source location: 24-well Eppendorf rack vs. 96-well module rack. */
+export function wellsForLocation(location: SourceLocation): string[] {
+  return location === "rack" ? EPPENDORF_WELLS : ALL_WELLS;
+}
+
+export function isValidWellForLocation(well: string, location: SourceLocation): boolean {
+  return wellsForLocation(location).includes(well.trim());
+}
+
 let idCounter = 0;
 export function nextId(prefix: string): string {
   idCounter += 1;
@@ -161,6 +182,7 @@ export function saveLibrary(entries: LibraryEntry[]): void {
 export function makeReaction(
   usedWells: Set<string>,
   usedReactionIds: Set<string>,
+  library: LibraryEntry[] = [],
 ): ReactionInput {
   const destinationWell = ALL_WELLS.find((w) => !usedWells.has(w)) ?? "";
   let n = usedReactionIds.size + 1;
@@ -169,6 +191,22 @@ export function makeReaction(
     n += 1;
     reactionId = `reaction_${n}`;
   }
+
+  // If there's exactly one predefined backbone in the library, start the new
+  // reaction with it already filled in — most reactions reuse the same one.
+  const backboneEntries = library.filter((e) => e.kind === "backbone");
+  const backbone =
+    backboneEntries.length === 1
+      ? makeFragment({
+          partName: backboneEntries[0].name,
+          sourceWell: backboneEntries[0].sourceWell,
+          sourceLocation: backboneEntries[0].sourceLocation,
+          concNgUl: backboneEntries[0].concNgUl ?? "",
+          sizeBp: backboneEntries[0].sizeBp ?? "",
+          molarRatio: "1",
+        })
+      : makeFragment({ molarRatio: "1" });
+
   return {
     id: nextId("reaction"),
     reactionId,
@@ -176,7 +214,7 @@ export function makeReaction(
     totalVolumeUl: "20",
     overrideTargetFmol: false,
     targetBackboneFmol: String(DEFAULT_TARGET_BACKBONE_FMOL),
-    backbone: makeFragment({ molarRatio: "1" }),
+    backbone,
     inserts: [makeFragment()],
     reagents: [
       makeReagent({ role: "enzyme" }),
@@ -451,8 +489,12 @@ export function computeReaction(
 
   // A component with a value but no source well is still incomplete.
   for (const c of components) {
-    if (c.volumeUl !== null && c.volumeUl > 0 && !isValidWell(c.sourceWell)) {
-      c.error = c.error ?? "Source well must look like A1-H12.";
+    if (c.volumeUl !== null && c.volumeUl > 0 && !isValidWellForLocation(c.sourceWell, c.sourceLocation)) {
+      c.error =
+        c.error ??
+        (c.sourceLocation === "rack"
+          ? "Well must be A1-D6 on the Eppendorf rack."
+          : "Well must be A1-H12 on the module.");
       c.volumeUl = null;
     }
   }

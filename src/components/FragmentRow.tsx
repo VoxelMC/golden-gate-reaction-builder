@@ -41,7 +41,7 @@ export default function FragmentRow({ fragment, computed, isBackbone, library, o
 				className="field-well"
 				autoComplete="off"
 				type="text"
-				list="well-options"
+				list={fragment.sourceLocation === "rack" ? "well-options-eppendorf" : "well-options"}
 				placeholder="Well"
 				value={fragment.sourceWell}
 				onChange={(e) => onChange({ sourceWell: e.target.value.toUpperCase() })}

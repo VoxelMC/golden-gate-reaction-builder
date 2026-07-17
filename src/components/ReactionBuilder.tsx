@@ -4,11 +4,13 @@ import {
 	ALL_WELLS,
 	DEFAULT_MIN_PIPETTE_VOLUME_UL,
 	DEFAULT_TARGET_BACKBONE_FMOL,
+	EPPENDORF_WELLS,
 	computeReaction,
 	findDuplicates,
 	loadLibrary,
 	makeLibraryEntry,
 	makeReaction,
+	nextId,
 	reactionHasErrors,
 	reactionsToCsv,
 	saveLibrary,
@@ -17,20 +19,22 @@ import ReactionCard from "./ReactionCard";
 import LibraryPanel from "./LibraryPanel";
 
 export default function ReactionBuilder() {
-	const [reactions, setReactions] = useState<ReactionInput[]>(() => [
-		makeReaction(new Set(), new Set()),
-	]);
+	// Both reactions and library start empty (matches SSR) and are filled in
+	// together right after mount — avoids a hydration mismatch between server
+	// and client renders, and ensures the very first reaction card sees the
+	// loaded library too (so a single predefined backbone auto-populates it).
+	const [reactions, setReactions] = useState<ReactionInput[]>([]);
+	const [library, setLibrary] = useState<LibraryEntry[]>([]);
+	useEffect(() => {
+		const loadedLibrary = loadLibrary();
+		setLibrary(loadedLibrary);
+		setReactions([makeReaction(new Set(), new Set(), loadedLibrary)]);
+	}, []);
+
 	const [defaultTargetBackboneFmol, setDefaultTargetBackboneFmol] = useState(DEFAULT_TARGET_BACKBONE_FMOL);
 	const [minPipetteVolumeUl, setMinPipetteVolumeUl] = useState(DEFAULT_MIN_PIPETTE_VOLUME_UL);
 	const [justExported, setJustExported] = useState(false);
 	const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-
-	// Library starts empty (matches SSR) and is filled in from localStorage right
-	// after mount — avoids a hydration mismatch between server and client renders.
-	const [library, setLibrary] = useState<LibraryEntry[]>([]);
-	useEffect(() => {
-		setLibrary(loadLibrary());
-	}, []);
 
 	function commitLibrary(next: LibraryEntry[]) {
 		setLibrary(next);
@@ -84,7 +88,37 @@ export default function ReactionBuilder() {
 	function addReaction() {
 		const usedWells = new Set(reactions.map((r) => r.destinationWell));
 		const usedIds = new Set(reactions.map((r) => r.reactionId));
-		setReactions((prev) => [...prev, makeReaction(usedWells, usedIds)]);
+		setReactions((prev) => [...prev, makeReaction(usedWells, usedIds, library)]);
+	}
+
+	function duplicateReaction(index: number) {
+		const original = reactions[index];
+		const usedIds = new Set(reactions.map((r) => r.reactionId.trim()));
+		let candidate = `${original.reactionId}_copy`;
+		let n = 2;
+		while (usedIds.has(candidate)) {
+			candidate = `${original.reactionId}_copy${n}`;
+			n += 1;
+		}
+		const usedWells = new Set(reactions.map((r) => r.destinationWell));
+		const destinationWell = ALL_WELLS.find((w) => !usedWells.has(w)) ?? "";
+
+		const copy: ReactionInput = {
+			...original,
+			id: nextId("reaction"),
+			reactionId: candidate,
+			destinationWell,
+			backbone: { ...original.backbone, id: nextId("frag") },
+			inserts: original.inserts.map((f) => ({ ...f, id: nextId("frag") })),
+			reagents: original.reagents.map((r) => ({ ...r, id: nextId("reagent") })),
+			water: { ...original.water },
+		};
+
+		setReactions((prev) => {
+			const next = [...prev];
+			next.splice(index + 1, 0, copy);
+			return next;
+		});
 	}
 
 	function toggleCollapsed(id: string) {
@@ -126,6 +160,11 @@ export default function ReactionBuilder() {
 
 				<datalist id="well-options">
 					{ALL_WELLS.map((well) => (
+						<option key={well} value={well} />
+					))}
+				</datalist>
+				<datalist id="well-options-eppendorf">
+					{EPPENDORF_WELLS.map((well) => (
 						<option key={well} value={well} />
 					))}
 				</datalist>
@@ -176,6 +215,7 @@ export default function ReactionBuilder() {
 							duplicateDestinationWell={duplicateDestinationWells.has(reaction.destinationWell.trim())}
 							onChange={(updated) => updateReaction(i, updated)}
 							onRemove={() => removeReaction(i)}
+							onDuplicate={() => duplicateReaction(i)}
 							onToggleCollapsed={() => toggleCollapsed(reaction.id)}
 						/>
 					))}

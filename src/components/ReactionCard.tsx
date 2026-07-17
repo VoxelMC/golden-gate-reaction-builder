@@ -16,6 +16,7 @@ interface Props {
 	duplicateDestinationWell: boolean;
 	onChange: (updated: ReactionInput) => void;
 	onRemove: () => void;
+	onDuplicate: () => void;
 	onToggleCollapsed: () => void;
 }
 
@@ -28,6 +29,7 @@ export default function ReactionCard({
 	duplicateDestinationWell,
 	onChange,
 	onRemove,
+	onDuplicate,
 	onToggleCollapsed,
 }: Props) {
 	const computed = computeReaction(reaction, settings);
@@ -77,6 +79,9 @@ export default function ReactionCard({
 						onChange={(e) => onChange({ ...reaction, totalVolumeUl: e.target.value })}
 					/>
 				</label>
+				<button type="button" className="btn-duplicate-card" onClick={onDuplicate} title="Duplicate reaction">
+					Duplicate
+				</button>
 				<button type="button" className="btn-remove-card" onClick={onRemove} title="Remove reaction">
 					Remove
 				</button>
@@ -189,7 +194,7 @@ export default function ReactionCard({
 						<input
 							className="field-well"
 							type="text"
-							list="well-options"
+							list={reaction.water.sourceLocation === "rack" ? "well-options-eppendorf" : "well-options"}
 							placeholder="Well"
 							value={reaction.water.sourceWell}
 							onChange={(e) => onChange({ ...reaction, water: { ...reaction.water, sourceWell: e.target.value.toUpperCase() } })}

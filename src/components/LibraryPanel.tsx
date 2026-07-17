@@ -55,7 +55,7 @@ export default function LibraryPanel({ library, onAdd, onUpdate, onRemove }: Pro
 										</select>
 										<input
 											type="text"
-											list="well-options"
+											list={entry.sourceLocation === "rack" ? "well-options-eppendorf" : "well-options"}
 											placeholder="Well"
 											value={entry.sourceWell}
 											onChange={(e) => onUpdate(entry.id, { sourceWell: e.target.value.toUpperCase() })}
